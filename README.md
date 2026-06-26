@@ -1,97 +1,128 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Transjakarta MT Fleet Management App
 
-# Getting Started
+Aplikasi mobile manajemen armada kendaraan yang dikembangkan sebagai bagian dari Tes Teknis Mobile Engineer — Management Trainee Transjakarta. Aplikasi ini mengonsumsi [MBTA V3 API](https://api-v3.mbta.com/docs/swagger/index.html) (transit API publik) untuk menampilkan data kendaraan secara real-time, lengkap dengan fitur filter dan detail.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## Tech Stack
 
-## Step 1: Start Metro
+- **React Native CLI** 0.79 (New Architecture)
+- **TypeScript** (strict mode)
+- **TanStack Query (React Query)** v5 — data fetching, caching, pagination
+- **React Navigation** (Native Stack) — navigasi antar screen
+- **Axios** — HTTP client
+- **react-native-config** — environment variable (API key)
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## Cara Menjalankan Aplikasi
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+### Prasyarat
 
-```sh
-# Using npm
-npm start
+Pastikan environment React Native CLI sudah terpasang. Ikuti panduan resmi: [React Native Environment Setup](https://reactnative.dev/docs/set-up-your-environment).
 
-# OR using Yarn
-yarn start
+Yang dibutuhkan:
+- Node.js >= 18
+- JDK 17 (untuk Android)
+- Android Studio + Android SDK (minimal SDK 24)
+- Xcode (untuk iOS, minimal target iOS 15) — khusus macOS
+- CocoaPods (untuk iOS)
+
+### 1. Clone repository
+
+```bash
+git clone https://github.com/<username>/transjakarta-mt-fleet-app.git
+cd transjakarta-mt-fleet-app
 ```
 
-## Step 2: Build and run your app
+### 2. Install dependency
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+```bash
+npm install
+```
 
-### Android
+Untuk iOS, install pods tambahan:
 
-```sh
-# Using npm
+```bash
+cd ios && pod install && cd ..
+```
+
+### 3. Setup API Key MBTA
+
+Aplikasi ini menggunakan API key MBTA untuk menghindari rate limit yang ketat (tanpa key dibatasi 20 request/menit, dengan key menjadi 1.000 request/menit).
+
+1. Daftar API key gratis di [api-v3.mbta.com/register](https://api-v3.mbta.com/register)
+2. Buat file `.env` di root project dengan isi:
+
+```
+MBTA_API_KEY=isi_api_key_anda
+```
+
+> Aplikasi tetap bisa berjalan tanpa API key (MBTA API bisa diakses publik), namun akan lebih mudah terkena rate limit saat development aktif.
+
+### 4. Jalankan aplikasi
+
+**Android:**
+
+```bash
 npm run android
-
-# OR using Yarn
-yarn android
 ```
 
-### iOS
+Pastikan emulator Android sudah berjalan (via Android Studio > Device Manager), atau device fisik tersambung dengan USB debugging aktif.
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+**iOS:**
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
+```bash
 npm run ios
-
-# OR using Yarn
-yarn ios
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+### 5. (Opsional) Jalankan Metro bundler secara manual
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+```bash
+npm start
+```
 
-## Step 3: Modify your app
+## Arsitektur
 
-Now that you have successfully run the app, let's make changes!
+### Struktur Folder
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+```
+src/
+├── api/            # Service layer: axios client, mapper, dan fungsi pemanggilan API per resource
+├── components/     # Reusable UI components (Card, Loading, Error state, dll)
+├── constants/       # Konstanta seperti base URL API
+├── hooks/          # Custom hooks (React Query) per resource
+├── navigation/     # Konfigurasi React Navigation
+├── screens/        # Halaman/screen utama aplikasi
+├── types/          # TypeScript interfaces & types
+└── App.tsx         # Entry point aplikasi
+```
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+### Pola Arsitektur: DTO vs Domain Model
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+MBTA API menggunakan format **JSON:API**, di mana setiap resource memiliki struktur bersarang (`data.attributes`, `data.relationships`) yang berbeda dari struktur flat yang ideal untuk dikonsumsi UI. Untuk menjembatani ini, aplikasi memisahkan dua jenis tipe data:
 
-## Congratulations! :tada:
+- **Raw/DTO types** (`VehicleResource`, `RouteResource`, `TripResource`) — mencerminkan struktur asli response API.
+- **Domain types** (`Vehicle`, `Route`, `Trip`) — struktur flat yang dipakai komponen UI.
 
-You've successfully run and modified your React Native App. :partying_face:
+Konversi antara keduanya ditangani oleh fungsi mapper di `src/api/mappers.ts`. Pola ini memastikan perubahan struktur API tidak langsung berdampak ke seluruh komponen UI, cukup diselesaikan di satu lapisan mapper.
 
-### Now what?
+### Data Fetching & Caching — React Query
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+Seluruh komunikasi dengan API ditangani lewat custom hooks berbasis TanStack Query (`useVehicles`, `useRoutes`, `useTrips`, dll), memberikan:
+- Caching otomatis berdasarkan `queryKey` (termasuk filter yang aktif)
+- State `isLoading`, `isError`, `isFetchingNextPage` tanpa perlu dikelola manual
+- Pagination berbasis cursor offset memakai `useInfiniteQuery` (10 data per fetch, sesuai requirement)
 
-# Troubleshooting
+### Filter Rute & Trip
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+Filter menggunakan pendekatan dependent query — daftar Trip hanya di-fetch setelah pengguna memilih minimal satu Rute, untuk menghindari pengambilan seluruh data Trip yang jumlahnya sangat besar. State pilihan filter disimpan sementara di dalam modal (tidak langsung memengaruhi list utama) hingga pengguna menekan tombol "Terapkan".
 
-# Learn More
+### Error Handling
 
-To learn more about React Native, take a look at the following resources:
+Axios interceptor terpusat di `src/api/apiClient.ts` mengonversi error teknis (response error JSON:API, network error, dll) menjadi pesan yang mudah dipahami pengguna. Setiap layer service menambahkan konteks tambahan sesuai operasi yang gagal. Pada halaman detail, kegagalan memuat data relasi (Rute/Trip) tidak menggagalkan seluruh halaman (graceful degradation) — hanya bagian terkait yang menampilkan pesan error dengan opsi coba lagi.
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+## Known Limitations
+
+- Peta lokasi kendaraan pada halaman detail belum/sudah diimplementasikan menggunakan [isi sesuai status akhir].
+- Aplikasi telah diuji pada Android emulator [isi versi/API level]. Pengujian pada iOS simulator/device fisik [isi status].
+
+## Screenshot
+
+[Tambahkan screenshot aplikasi di sini]
