@@ -120,9 +120,4 @@ Axios interceptor terpusat di `src/api/apiClient.ts` mengonversi error teknis (r
 
 ## Known Limitations
 
-- Peta lokasi kendaraan pada halaman detail belum/sudah diimplementasikan menggunakan [isi sesuai status akhir].
-- Aplikasi telah diuji pada Android emulator [isi versi/API level]. Pengujian pada iOS simulator/device fisik [isi status].
-
-## Screenshot
-
-[Tambahkan screenshot aplikasi di sini]
+- Peta lokasi kendaraan pada halaman detail sudah diimplementasikan menggunakan WebView.
